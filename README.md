@@ -14,6 +14,37 @@ mov edx, [mem]  ; Load value from memory at 'mem' into EDX register
 - `EDX` (Data Register): Extends EAX for large operations (e.g., 64-bit math via EDX:EAX).
 #### Key Difference:
 EAX is optimized for arithmetic, ECX for counting, EBX/EDX for data/pointers. All are 32-bit (4 bytes) in x86.
+#### Direct Memory Access
+```asm
+; HRM Level 3: CopyFROM/CopyTO using fixed addresses  
+section .data  
+    mailbox0 db 'U'  ; HRM's tile 0  
+    mailbox3 db 'G'  ; HRM's tile 3  
+    mailbox4 db 'B'  ; HRM's tile 4  
+
+section .text  
+_start:  
+    mov al, [mailbox4]  ; COPYFROM 4 → 'B'  
+    call _print_char     ; OUTBOX  
+    mov al, [mailbox0]  ; COPYFROM 0 → 'U'  
+    call _print_char  
+    mov al, [mailbox3]  ; COPYFROM 3 → 'G'  
+    call _print_char  
+```
+#### Temporary Storage Swap
+```asm
+section .bss  
+    temp resb 1  ; Like HRM's floor tile 0  
+
+_scrambler:  
+    ; Input: AL=first char, BL=second char  
+    mov [temp], al  ; COPYTO 0  
+    mov al, bl      ; Move second char to output  
+    call _print_char  
+    mov al, [temp]  ; COPYFROM 0  
+    call _print_char  
+    ret  
+```
 #### Exercises: Swap two registers without a third.
 ### Basic Arithmetic/Logic
 - Must-Know Instructions:
@@ -49,9 +80,30 @@ ZF (Zero), SF (Sign), CF (Carry).  ; Processor status flags
 - `CF` (Carry Flag): Set to `1` if an arithmetic operation overflows (e.g., adding two large numbers exceeds 32 bits).
 #### Conditionals Jumps
 ```asm
-je   ; Jump if equal (ZF=1)
+; Equality Tests
+je   ; Jump if equal (ZF=1) 
 jne  ; Jump if not equal (ZF=0)
 jz   ; Jump if zero (same as je)
+
+; Signed Comparisons (for numbers)
+jg   ; Jump if greater (SF=OF and ZF=0)
+jge  ; Jump if greater/equal (SF=OF)
+jl   ; Jump if less (SF≠OF)
+jle  ; Jump if less/equal (SF≠OF or ZF=1)
+
+; Unsigned Comparisons
+ja   ; Jump if above (CF=0 and ZF=0)
+jae  ; Jump if above/equal (CF=0)
+jb   ; Jump if below (CF=1)
+jbe  ; Jump if below/equal (CF=1 or ZF=1)
+
+; Special Cases
+js   ; Jump if negative (SF=1)
+jns  ; Jump if not negative (SF=0)
+jc   ; Jump if carry (CF=1)
+jnc  ; Jump if no carry (CF=0)
+jo       ; jump overflow (OF=1)
+jno      ; jump no overflow (OF=0)
 ```
 - Pattern:
 ```asm
@@ -101,7 +153,7 @@ section .data
     len equ $ - msg      ; Calculate string length (current pos - msg start)  
 ```
 ### Function Calls
-- cdecl Convention:
+- `cdecl` Convention:
 ```asm
 push arg2     ; Push second argument onto stack  
 push arg1     ; Push first argument onto stack  
