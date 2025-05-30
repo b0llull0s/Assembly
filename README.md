@@ -1,4 +1,4 @@
-# Assembly
+# Assembly 101
 ## Core Execution Model
 ### Registers & Data Movement
 - Key Ops:
