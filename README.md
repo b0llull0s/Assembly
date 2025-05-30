@@ -56,7 +56,9 @@ jz   ; Jump if zero (same as je)
 - Pattern:
 ```asm
 cmp eax, 10     ; Compare EAX with 10, sets flags  
-jg greater_than ; Jump to 'greater_than' if EAX > 10
+jg greater_than  ; Jump only if eax > 10 (signed)
+mov ebx, 0       ; Executed if eax <= 10
+greater_than:
 ```
 - Jumps if `eax > 10` (signed comparison).
 - How? After `cmp eax, 10`:
