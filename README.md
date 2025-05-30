@@ -1,53 +1,19 @@
 # Assembly 101
 ## Core Execution Model
-### Registers & Data Movement
-- Key Ops:
-```asm
-mov eax, 10     ; Load immediate value 10 into EAX register 
-mov ebx, eax    ; Copy value from EAX to EBX register  
-mov [mem], ecx  ; Store value from ECX into memory at 'mem' address
-mov edx, [mem]  ; Load value from memory at 'mem' into EDX register  
-```
+### Core Registers
 - `EAX` (Accumulator Register): Primary register for arithmetic operations and function return values.
 - `EBX` (Base Register): Often used as a pointer to data (e.g., memory addresses).
 - `ECX` (Counter Register): Used for loops/string operations (e.g., rep prefixes).
 - `EDX` (Data Register): Extends EAX for large operations (e.g., 64-bit math via EDX:EAX).
-#### Key Difference:
-EAX is optimized for arithmetic, ECX for counting, EBX/EDX for data/pointers. All are 32-bit (4 bytes) in x86.
-#### Direct Memory Access
+### Movement
 ```asm
-; HRM Level 3: CopyFROM/CopyTO using fixed addresses  
-section .data  
-    mailbox0 db 'U'  ; HRM's tile 0  
-    mailbox3 db 'G'  ; HRM's tile 3  
-    mailbox4 db 'B'  ; HRM's tile 4  
-
-section .text  
-_start:  
-    mov al, [mailbox4]  ; COPYFROM 4 → 'B'  
-    call _print_char     ; OUTBOX  
-    mov al, [mailbox0]  ; COPYFROM 0 → 'U'  
-    call _print_char  
-    mov al, [mailbox3]  ; COPYFROM 3 → 'G'  
-    call _print_char  
+mov eax, 10     ; Load immediate value 10 into EAX register 
+mov ebx, eax    ; Copy value from EAX to EBX register  
+mov [mem], ecx  ; Store value from ECX into memory at 'mem' address
+mov edx, [mem]  ; Load value from memory at 'mem' into EDX register
+mov [temp], al  
 ```
-#### Temporary Storage Swap
-```asm
-section .bss  
-    temp resb 1  ; Like HRM's floor tile 0  
-
-_scrambler:  
-    ; Input: AL=first char, BL=second char  
-    mov [temp], al  ; COPYTO 0  
-    mov al, bl      ; Move second char to output  
-    call _print_char  
-    mov al, [temp]  ; COPYFROM 0  
-    call _print_char  
-    ret  
-```
-#### Exercises: Swap two registers without a third.
 ### Basic Arithmetic/Logic
-- Must-Know Instructions:
 ```asm
 add/sub eax, ebx  ; Add/subtract EBX from EAX, result in EAX  
 inc/dec ecx       ; Increment/decrement ECX by 1  
@@ -72,9 +38,6 @@ start:           ; Define label named 'start'
     jmp start    ; Unconditionally jump back to 'start' label  
 ```  
 ### Flags:
-```asm
-ZF (Zero), SF (Sign), CF (Carry).  ; Processor status flags
-```
 - `ZF` (Zero Flag): Set to `1` if the result of an operation is zero (e.g., `cmp eax, 10` sets `ZF=1` if `eax == 10`).
 - `SF` (Sign Flag): Set to `1` if the result is negative (`MSB = 1`).
 - `CF` (Carry Flag): Set to `1` if an arithmetic operation overflows (e.g., adding two large numbers exceeds 32 bits).
@@ -105,20 +68,8 @@ jnc  ; Jump if no carry (CF=0)
 jo       ; jump overflow (OF=1)
 jno      ; jump no overflow (OF=0)
 ```
-- Pattern:
-```asm
-cmp eax, 10     ; Compare EAX with 10, sets flags  
-jg greater_than  ; Jump only if eax > 10 (signed)
-mov ebx, 0       ; Executed if eax <= 10
-greater_than:
-```
-- Jumps if `eax > 10` (signed comparison).
-- How? After `cmp eax, 10`:
-  - `ZF=0` (result not zero) and `SF=OF` (sign flag equals overflow flag).
-#### Exercise: Loop until eax is negative.
 ## Memory & Addressing
 ### Memory Access Modes
-Examples:
 ```asm
 mov eax, [ebx]         ; Load value from memory address in EBX into EAX  
 mov ecx, [array+esi*4] ; Load value from array at index ESI (scaled by 4)   
@@ -138,20 +89,6 @@ pop ebx   ; Load value from [ESP] into EBX, then increment ESP by 4
   - Stores `eax` at [ESP].
 - `add esp, 8`:
   - After pushing two 4-byte arguments, this "cleans" the stack by moving ESP back up 8 bytes.
-#### Exercise: Reverse a string using the stack.
-## System Calls & I/O
-- Linux x86 Example:
-```asm
-mov eax, 1    ; Set syscall number (1 = sys_exit)  
-mov ebx, 0    ; Set exit status code (0 = success)  
-mov ecx, msg  ; Set pointer to message string  
-mov edx, len  ; Set message length in bytes  
-int 0x80      ; Trigger software interrupt to invoke kernel  
-
-section .data  
-    msg db "Hello", 0xA  ; Define string "Hello" with newline (0xA)  
-    len equ $ - msg      ; Calculate string length (current pos - msg start)  
-```
 ### Function Calls
 - `cdecl` Convention:
 ```asm
