@@ -109,8 +109,7 @@ leave                ; Cleanup
 push eax  ; Decrement ESP by 4, then store EAX at [ESP]  
 pop ebx   ; Load value from [ESP] into EBX, then increment ESP by 4  
 ```
-### Function Calls
-- `cdecl` Convention:
+### Calling Convention (cdecl)
 ```asm
 push arg2     ; Push second argument onto stack  
 push arg1     ; Push first argument onto stack  
