@@ -1,47 +1,61 @@
 # Assembly 101
-## Core Execution Model
 ### Core Registers
 - `EAX` (Accumulator Register): Primary register for arithmetic operations and function return values.
 - `EBX` (Base Register): Often used as a pointer to data (e.g., memory addresses).
 - `ECX` (Counter Register): Used for loops/string operations (e.g., rep prefixes).
 - `EDX` (Data Register): Extends EAX for large operations (e.g., 64-bit math via EDX:EAX).
+- `ESI` : Source Index
+- `EDI` : Dest Index
+- `ESP` : Stack Pointer
+- `EBP` : Base Pointer 
 ### Movement
 ```asm
-mov eax, 10     ; Load immediate value 10 into EAX register 
+mov eax, 0xDEADBEEF     ; Load immediate value into EAX register 
 mov ebx, eax    ; Copy value from EAX to EBX register  
 mov [mem], ecx  ; Store value from ECX into memory at 'mem' address
 mov edx, [mem]  ; Load value from memory at 'mem' into EDX register
-mov [temp], al  
+mov [temp], al
+lea edi, [eax+ecx*4] ; Address calculation
+; Size Overrides  
+movzx eax, byte [mem] ; Zero-extend  
+movsx edx, word [mem] ; Sign-extend 
 ```
-### Basic Arithmetic/Logic
+### Arithmetic
 ```asm
-add/sub eax, ebx  ; Add/subtract EBX from EAX, result in EAX  
-inc/dec ecx       ; Increment/decrement ECX by 1  
-and/or/xor edx, 0xFF ; Bitwise AND/OR/XOR EDX with 0xFF 
-shl/shr eax, 2    ; Shift EAX left/right by 2 bits (multiply/divide by 4)   
+add/sub eax, ebx  ; Add/subtract EBX from EAX, result in EAX
+imul/idiv         ; */ (signed)
+inc/dec ecx       ; Increment/decrement ECX by 1
+imul eax, ebx        ; Signed ×  
+div ebx              ; EAX÷EBX (EAX=quot, EDX=rem)
 ```
-- `Bitwise`: Operations that work on individual bits (not decimal numbers).
-  - `AND`: Turns bits off (1 AND 0 = 0).
-  - `OR`: Turns bits on (1 OR 0 = 1).
-  - `XOR`: Toggles bits (1 XOR 1 = 0).
+### Bitwise (Operations that work on individual bits)
+```asm
+and/or/xor edx, 0xFF ; Bit masking 
+shl/shr eax, 2    ; Shift EAX left/right by 2 bits (multiply/divide by 4)
+ror/rol eax, 8       ; Bit rotation  
+```
+- `AND`: Turns bits off (1 AND 0 = 0).
+- `OR`: Turns bits on (1 OR 0 = 1).
+- `XOR`: Toggles bits (1 XOR 1 = 0).
 - `0xFF`: A hexadecimal value where all 8 bits are 1 (binary: 11111111). Used to mask/extract the lowest byte of a register.
-- `shl eax, 2`: Shift all bits in EAX left by 2 positions.
-  - Equivalent to multiplying by `4` (since `2^2 = 4`).
-- `shr eax, 2`: Shift all bits right by 2 positions.
-  - Equivalent to dividing by `4` (truncates remainder).
-#### Exercise: Calculate (eax * 5) + 3 using only add, shl.
-## Control Flow
-### Labels & Unconditional Jump
-- Syntax:
+### Labels
 ```asm
 start:           ; Define label named 'start'  
-    jmp start    ; Unconditionally jump back to 'start' label  
-```  
+```
 ### Flags:
+```asm
+; Flag Control  
+stc/clc              ; Set/Clear CF  
+cmc                  ; Complement CF  
+```
 - `ZF` (Zero Flag): Set to `1` if the result of an operation is zero (e.g., `cmp eax, 10` sets `ZF=1` if `eax == 10`).
 - `SF` (Sign Flag): Set to `1` if the result is negative (`MSB = 1`).
 - `CF` (Carry Flag): Set to `1` if an arithmetic operation overflows (e.g., adding two large numbers exceeds 32 bits).
-#### Conditionals Jumps
+### Unconditional Jump
+```asm
+jmp start    ; Unconditionally jump back to 'start' label
+```
+### Conditionals Jumps
 ```asm
 ; Equality Tests
 je   ; Jump if equal (ZF=1) 
@@ -68,36 +82,58 @@ jnc  ; Jump if no carry (CF=0)
 jo       ; jump overflow (OF=1)
 jno      ; jump no overflow (OF=0)
 ```
-## Memory & Addressing
+### Loops
+```asm
+loop label    ; ECX--, jump if ≠0  
+loope/loopne  ; ECX-- + ZF check  
+```
 ### Memory Access Modes
 ```asm
-mov eax, [ebx]         ; Load value from memory address in EBX into EAX  
-mov ecx, [array+esi*4] ; Load value from array at index ESI (scaled by 4)   
+mov eax, [ebx]         ; Load value from memory address in EBX into EAX
+mov eax, [ebx+8]     ; Displacement   
+mov ecx, [array+esi*4] ; Load value from array at index ESI (scaled by 4)
+; Segment Overrides  
+mov eax, gs:[0x30]   ; GS segment  
 ```
-- `array`: Base address of the array.
-- `esi`: Index (e.g., 0 for first element).
-- `*4`: Scale factor (each element is 4 bytes).
 ### Stack Operations
-- LIFO Basics:
 ```asm
+push/pop eax         ; ESP ±4  
+pusha/popa           ; All general regs  
+pushfd/popfd         ; Flags register  
+
+; Frame Management  
+enter 16, 0          ; Allocate 16 bytes  
+leave                ; Cleanup  
+
+; LIFO Basics
 push eax  ; Decrement ESP by 4, then store EAX at [ESP]  
 pop ebx   ; Load value from [ESP] into EBX, then increment ESP by 4  
 ```
-- `ESP` (Stack Pointer): Points to the top of the stack (grows downward in memory).
-- `push eax`:
-  - Decrements `ESP` by 4 (32-bit systems use 4-byte stack slots).
-  - Stores `eax` at [ESP].
-- `add esp, 8`:
-  - After pushing two 4-byte arguments, this "cleans" the stack by moving ESP back up 8 bytes.
 ### Function Calls
 - `cdecl` Convention:
 ```asm
 push arg2     ; Push second argument onto stack  
 push arg1     ; Push first argument onto stack  
 call my_func  ; Call function (pushes return address)  
-add esp, 8    ; Clean stack by removing 8 bytes (2 args * 4 bytes each)   
+add esp, 8    ; Clean stack by removing 8 bytes (2 args * 4 bytes each)
+; Callee  
+func:  
+  push ebp  
+  mov ebp, esp  
+  sub esp, 16        ; Local vars  
+  ...  
+  leave  
+  ret  
 ```
-
+### Essential Directives
+```asm
+section .text        ; Code  
+section .data        ; Initialized data  
+  msg db "Hello",0xA ; String  
+  len equ $-msg      ; Length  
+section .bss         ; Uninitialized  
+  buf resb 256       ; Reserve bytes  
+```
 
 
 
