@@ -1,13 +1,15 @@
 # Assembly 101
 ### Core Registers
-- `EAX` (Accumulator Register): Primary register for arithmetic operations and function return values.
-- `EBX` (Base Register): Often used as a pointer to data (e.g., memory addresses).
-- `ECX` (Counter Register): Used for loops/string operations (e.g., rep prefixes).
-- `EDX` (Data Register): Extends EAX for large operations (e.g., 64-bit math via EDX:EAX).
-- `ESI` : Source Index
-- `EDI` : Dest Index
-- `ESP` : Stack Pointer
-- `EBP` : Base Pointer 
+| Register | Primary Use                | Caller-Saved? |
+|----------|----------------------------|---------------|
+| EAX      | Return values, arithmetic  | Yes           |
+| EBX      | Base pointer, syscall arg  | No            |
+| ECX      | Loop counters, syscall arg | Yes           |
+| EDX      | I/O ports, extended math   | Yes           |
+| ESI      | Source Index               | No            |
+| EDI      | Dest Index                 | No            |
+| ESP      | Stack Pointer              | Special       |
+| EBP      | Base Pointer               | Special       |
 ### Movement
 ```asm
 mov eax, 0xDEADBEEF     ; Load immediate value into EAX register 
@@ -32,7 +34,11 @@ div ebx              ; EAX÷EBX (EAX=quot, EDX=rem)
 ```asm
 and/or/xor edx, 0xFF ; Bit masking 
 shl/shr eax, 2    ; Shift EAX left/right by 2 bits (multiply/divide by 4)
-ror/rol eax, 8       ; Bit rotation  
+ror/rol eax, 8       ; Bit rotation
+and eax, 0xFFFF0000   ; Mask upper 16 bits
+xor eax, eax          ; Fast zero (ZF=1)
+test al, 0x01         ; Check bit 0 (sets ZF)
+bswap eax             ; Endian swap (32-bit)
 ```
 - `AND`: Turns bits off (1 AND 0 = 0).
 - `OR`: Turns bits on (1 OR 0 = 1).
@@ -44,6 +50,8 @@ start:           ; Define label named 'start'
 ```
 ### Flags:
 ```asm
+cmp eax, ebx          ; ZF,SF,OF,CF
+test eax, ebx         ; ZF,SF (AND without store)
 ; Flag Control  
 stc/clc              ; Set/Clear CF  
 cmc                  ; Complement CF  
