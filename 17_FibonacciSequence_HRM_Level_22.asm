@@ -52,3 +52,6 @@ _start:
 section .data
     output_speed    dd  0    ; Output buffer (speed-optimized)
     output_size     dd  0    ; Output buffer (size-optimized)
+
+; For very large inputs, use a lookup table or Binet’s formula for O(1) time!
+
