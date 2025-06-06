@@ -1,6 +1,4 @@
 ; ================================================
-; File: CoordinateTransformer_Offensive.asm
-; HRM Level: "Re-Coordinator"
 ; Key Concepts:
 ;   1. Linear coordinate transformation
 ;   2. Memory-address manipulation
@@ -14,7 +12,7 @@ section .text
     global _start
 
 ; -------------------------------------------------------------------
-; PART 1: HRM Literal Translation (Educational)
+; PART 1: HRM Literal Translation
 ; -------------------------------------------------------------------
 hrm_recoordinator:
     mov esi, inbox          ; INBOX pointer
